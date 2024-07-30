@@ -1,0 +1,7 @@
+django
+djangorestframework
+mongoengine
+django-environ
+bcrypt
+djangorestframework-simplejwt
+pillow
