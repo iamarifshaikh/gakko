@@ -19,7 +19,6 @@ SECRET_KEY = env('SECRET_KEY')
 
 logger = logging.getLogger(__name__)
 
-
 # ------------------------------------------------------------All Admin related API----------------------------------------------------------------------------------------------------
 
 # { Admin registration by system only }
@@ -40,13 +39,14 @@ logger = logging.getLogger(__name__)
 
 #         return Response({'error': 'Registration failed for admin'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
 from .utils import *
 # {Administrator Approve by Admin only}
 class ApproveAdministrator(APIView):
     @method_decorator(is_logged_in)
     @method_decorator(is_Admin)
     def post(self, request):
-        administrator = Administrator.objects.get(username=request.data['Admins_username'])
+        administrator = Administrator.objects.get(id=request.data['id'])
         if not administrator.is_approved:
             administrator.approve()
             # send_email_to_client()
@@ -77,27 +77,28 @@ class RegisterAdministrator(APIView):
     permission_classes = []
 
     def post(self, request):
-        # Check if user exists
-        if Administrator.objects.filter(username=request.data['username']).first():
-            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        # # Check if user exists
+        # if Administrator.objects.filter(username=request.data['username']).first():
+        #     return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
          # Check if email exists
         if Administrator.objects.filter(email_address=request.data['email_address']).first():
             return Response({'error': 'Email address already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # school_license_pdf = request.FILES.get('school_license_pdf')
         request.data['role'] = 'Administrator'
         serializer = AdministratorSerializer(data=request.data)
 
         if serializer.is_valid():
             administrator = serializer.save()
-            logger.info(f"Administrator {request.data['username']} registered.")
+            # logger.info(f"Administrator {request.data['username']} registered.")
             return Response({
                 'message': "Administrator registered successfully!",
                 'payload': serializer.data,
             }, status=status.HTTP_201_CREATED)
 
         return Response({'error': 'Registration failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # {Login based on role}
 class LoginView(APIView):
@@ -121,8 +122,8 @@ class LoginView(APIView):
             # Set the JWT token as a cookie
             response.set_cookie(
                 key='jwt_token', 
-                value=str(refresh.access_token), 
-                httponly=True, 
+                value=str(refresh.access_token),
+                httponly=True,
                 secure=False,  # Set to True in production
                 samesite='Lax',
                 path='/'
@@ -135,12 +136,13 @@ class LoginView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 # Random testing purpose
 @is_logged_in
 @is_administrator
 def AppRi(request):
     return JsonResponse({
         'message': 'You are authenticated', 
-        'user_id': request.user_id, 
-        'administrator': request.Administrator
+        'user_id': request.user_id,  
+        'administrator': request.Administrator  
     })

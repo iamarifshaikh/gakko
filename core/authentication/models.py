@@ -4,6 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.core.mail import send_mail
 import random
+import string
 from .utils import send_email
 
 class Superadmin(Document):
@@ -20,21 +21,20 @@ class Superadmin(Document):
         return bcrypt.checkpw(req_password.encode('utf-8'), self.password.encode('utf-8'))
 
 class Administrator(Document):
-    username = StringField(required=True, unique=True)
-    password = StringField(required=True)
+    password = StringField(null=True)
     is_approved = BooleanField(default=False)
     approval_date = DateTimeField(null=True)  # Date of approval
     is_rejected = BooleanField(default=False)
     rejection_date = DateTimeField(null=True)  # Date of rejection
     school_name = StringField(required=True)
-    school_address = StringField()
+    school_address = StringField(required=True)
     contact_number = StringField(required=True)
     email_address = StringField(required=True,unique=True)
     school_type = StringField(required=True)
-    school_license_pdf = FileField(required=False)  # Field to store school license PDF
-    approved_By = StringField(null=True)
+    school_license_pdf = FileField(required=False,upload_to = "Administrator")  # Field to store school license PDF
     role = StringField(default='Administrator')
     unique_ID = StringField(null=True,unique=True)
+
 
 
     def set_password(self, req_password):
@@ -50,20 +50,27 @@ class Administrator(Document):
         self.is_rejected = False
         self.approval_date = datetime.utcnow()
         self.unique_ID = self.generate_administrator_id()
+
+        password = self.generate_random_password()
+
+        self.set_password(password)
         
         self.save()
 
-        send_email(self.username , self.email_address , self.unique_ID)
+        send_email(self.school_name,self.email_address , self.unique_ID , password)
 
+    def generate_random_password(self,length=8):
+        characters = string.ascii_letters + string.digits + string.punctuation
+        return ''.join(random.choice(characters) for i in range(length))
 
     def generate_administrator_id(self):
-        username_part = self.username[:3].upper()
-        school_name_part = self.school_name[:3].upper()
-        school_address_part = self.school_address[:3].upper()
+        # username_part = self.username[:3].upper()
+        school_name_part = self.school_name[:4].upper()
+        school_address_part = self.school_address[:4].upper()
 
         random_number =str(random.randint(1000,9999))
 
-        return f"{username_part}{school_name_part}{school_address_part}{random_number}"
+        return f"{school_name_part}{school_address_part}{random_number}"
         
 
     def reject(self):

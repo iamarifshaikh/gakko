@@ -4,8 +4,7 @@ from rest_framework import serializers
 
 class AdministratorSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)  # Handle ObjectId as a string
-    username = serializers.CharField(required=True)
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(required=False, write_only=True)
     is_approved = serializers.BooleanField(read_only=True)
     approval_date = serializers.DateTimeField(read_only=True)
     is_rejected = serializers.BooleanField(required=False)
@@ -17,17 +16,17 @@ class AdministratorSerializer(serializers.Serializer):
     school_type = serializers.CharField(required=True)
     approved_By = serializers.CharField(allow_blank=True, required=False)
     role = serializers.CharField()
+    school_license_pdf = serializers.FileField(required=False)
     unique_ID = StringField()
     
     def create(self, validated_data):
-        password = validated_data.pop('password')
-        administrator = Administrator(**validated_data)
-        administrator.set_password(password)
-        administrator.save()
-        return administrator
+        return Administrator.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.username = validated_data.get('username', instance.username)
+        password = validated_data.pop('password', None)
+        if password:
+            instance.set_password(password)
+        # instance.username = validated_data.get('username', instance.username)
         instance.is_approved = validated_data.get('is_approved', instance.is_approved)
         instance.approval_date = validated_data.get('approval_date', instance.approval_date)
         instance.is_rejected = validated_data.get('is_rejected', instance.is_rejected)
@@ -40,9 +39,11 @@ class AdministratorSerializer(serializers.Serializer):
         instance.approved_By = validated_data.get('approved_By', instance.approved_By)
         instance.role = validated_data.get('role',instance.role)
         instance.unique_ID = validated_data.get('unique_ID',instance.unique_ID)
-        
-        if 'password' in validated_data:
-            instance.set_password(validated_data['password'])
+        if 'school_license_pdf' in validated_data:
+            instance.school_license_pdf = validated_data['school_license_pdf']
+            
+        # if 'password' in validated_data:
+        #     instance.set_password(validated_data['password'])
         
         instance.save()
         return instance
@@ -76,46 +77,113 @@ class AdminSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    username = serializers.CharField(required=False)  # Required for 'Admin'
+    email = serializers.EmailField(required=False)    # Required for 'Admin'
+    password = serializers.CharField(write_only=True) # Required for both roles
+    unique_ID = serializers.CharField(required=False) # Required for 'Administrator'
     role = serializers.ChoiceField(choices=['Administrator', 'Teacher', 'Parent', 'Admin'])
 
-    def validate(self, validated_data):
-        username = validated_data.get('username')
-        email = validated_data.get('email')
-        password = validated_data.get('password')
-        role = validated_data.get('role')
+    def validate(self, data):
+        role = data.get('role')
 
-        if role == 'Administrator':
-            user = Administrator.objects.filter(username=username).first()
-            if user:
-                if user.is_approved == False:
-                    raise serializers.ValidationError("Your account is not approved yet.")
-                if user.check_password(password):
-                    return user
-                else:
-                    raise serializers.ValidationError({"non_field_errors": ["Invalid credentials"]})
-            else:
-                raise serializers.ValidationError({"non_field_errors": ["User not found"]})
-
-        elif role == 'Admin':
+        if role == 'Admin':
+            # Ensure 'username', 'email', and 'password' are provided for 'Admin'
+            if not data.get('username'):
+                raise serializers.ValidationError({"username": "Username is required for Admin login."})
+            if not data.get('email'):
+                raise serializers.ValidationError({"email": "Email is required for Admin login."})
+            if not data.get('password'):
+                raise serializers.ValidationError({"password": "Password is required for Admin login."})
+            
+            # Validate Admin credentials
             correct_password = 'admin12as!@AS'
-            correct_username = 'Admin123'  # Assuming you want to check this, though it's not in the form
+            correct_username = 'Admin123'  # Assuming these are the correct credentials
 
-            if username != correct_username:
-                raise serializers.ValidationError("Invalid username for Admin") 
+            if data.get('username') != correct_username:
+                raise serializers.ValidationError("Invalid username for Admin")
 
-            if password != correct_password:
+            if data.get('password') != correct_password:
                 raise serializers.ValidationError("Invalid password for Admin")
 
-            user = Superadmin.objects.filter(username=username).first()
-            if user:
-                return user
-            else:
+            user = Superadmin.objects.filter(username=data.get('username')).first()
+            if not user:
                 raise serializers.ValidationError({"non_field_errors": ["Admin account not found"]})
+
+            return user
+
+        elif role == 'Administrator':
+            # Ensure 'unique_ID' and 'password' are provided for 'Administrator'
+            if not data.get('unique_ID'):
+                raise serializers.ValidationError({"unique_ID": "Unique ID is required for Administrator login."})
+            if not data.get('password'):
+                raise serializers.ValidationError({"password": "Password is required for Administrator login."})
+            
+            # Validate Administrator credentials
+            user = Administrator.objects.filter(unique_ID=data.get('unique_ID')).first()
+            if not user:
+                raise serializers.ValidationError({"non_field_errors": ["User not found"]})
+
+            if not user.is_approved:
+                raise serializers.ValidationError("Your account is not approved yet.")
+
+            if not user.check_password(data.get('password')):
+                raise serializers.ValidationError({"non_field_errors": ["Invalid credentials"]})
+
+            return user
 
         else:
             raise serializers.ValidationError({"non_field_errors": ["Invalid role or credentials."]})
 
-        return validated_data
+        return data
+
+
+
+
+# class LoginSerializer(serializers.Serializer):
+#     username = serializers.CharField(required=False)
+#     email = serializers.EmailField(required=False)
+#     password = serializers.CharField(write_only=True)
+#     unique_ID = serializers.CharField(required=False)
+#     role = serializers.ChoiceField(choices=['Administrator', 'Teacher', 'Parent', 'Admin'])
+
+#     def validate(self, validated_data):
+#         role = 
+#         username = validated_data.get('username')
+#         email = validated_data.get('email')
+#         password = validated_data.get('password')
+#         role = validated_data.get('role')
+#         unique_ID = validated_data.get('unique_ID')
+
+#         if role == 'Administrator':
+#             user = Administrator.objects.filter(unique_ID=unique_ID).first()
+#             if user:
+#                 if user.is_approved == False:
+#                     raise serializers.ValidationError("Your account is not approved yet.")
+#                 if user.check_password(password):
+#                     return user
+#                 else:
+#                     raise serializers.ValidationError({"non_field_errors": ["Invalid credentials"]})
+#             else:
+#                 raise serializers.ValidationError({"non_field_errors": ["User not found"]})
+
+
+#         elif role == 'Admin':
+#             correct_password = 'admin12as!@AS'
+#             correct_username = 'Admin123'  # Assuming you want to check this, though it's not in the form
+
+#             if username != correct_username:
+#                 raise serializers.ValidationError("Invalid username for Admin")
+
+#             if password != correct_password:
+#                 raise serializers.ValidationError("Invalid password for Admin")
+
+#             user = Superadmin.objects.filter(username=username).first()
+#             if user:
+#                 return user
+#             else:
+#                 raise serializers.ValidationError({"non_field_errors": ["Admin account not found"]})
+
+#         else:
+#             raise serializers.ValidationError({"non_field_errors": ["Invalid role or credentials."]})
+
+#         return validated_data
