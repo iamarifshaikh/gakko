@@ -11,7 +11,7 @@ class Superadmin(Document):
     username = StringField(required=True)
     password = StringField(required=True)
     email = StringField(required=True)
-    role = StringField()
+    role = StringField(default="Admin")
 
     def set_password(self,req_password):
         salt = bcrypt.gensalt()
