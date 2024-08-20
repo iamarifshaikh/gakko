@@ -24,14 +24,15 @@ This Django project(application) provides a robust system for user management, f
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository_url>
-   cd <repository_directory>
+   git clone https://github.com/iamarifshaikh/gakko.git
+   cd gakko
    ```
 
 2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
+   (activate the env)
 
 3. **Set up the environment variables** (see [Environment Variables](#environment-variables)).
 
