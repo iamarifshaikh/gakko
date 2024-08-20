@@ -8,8 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from bson import ObjectId
 from django.utils.decorators import method_decorator
-from .models import Administrator
-from .serializers import AdministratorSerializer, LoginSerializer
+from .models import Administrator , Superadmin , Teacher
+from .serializers import AdministratorSerializer, LoginSerializer , AdminSerializer , TeacherSerializer
 from .authentication import is_logged_in, is_administrator , is_Admin
 
 env = environ.Env()
@@ -136,7 +136,6 @@ class LoginView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 # Random testing purpose
 @is_logged_in
 @is_administrator
@@ -146,3 +145,48 @@ def AppRi(request):
         'user_id': request.user_id,  
         'administrator': request.Administrator  
     })
+
+# ---------------------------------------------Teacher related API-------------------------------------------------------------------------------------
+
+# class RegisterTeacher(APIView):
+#     permission_classes = []
+
+#     def post(self, request):
+#         if Teacher.objects.filter(email_address=request.data['email_address']).first():
+#             return Response({'message': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         request.data['role'] = 'Teacher'
+#         serializer = TeacherSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             # Save the teacher and trigger the register() method
+#             teacher = serializer.save()
+
+#             return Response({
+#                 'message': "Teacher registered successfully!",
+#                 'payload': serializer.data,
+#             }, status=status.HTTP_201_CREATED)
+
+#         return Response({'error': 'Teacher Registration failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+class RegisterTeacher(APIView):
+    
+    @method_decorator(is_logged_in)
+    @method_decorator(is_administrator)
+
+    def post(self, request):
+        if Teacher.objects.filter(email_address=request.data['email_address']).first():
+            return Response({'message': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = TeacherSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Save the teacher and trigger the register() method
+            teacher = serializer.save()
+
+            return Response({
+                'message': "Teacher registered successfully!",
+                'payload': serializer.data,
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({'error': 'Teacher Registration failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

@@ -6,4 +6,5 @@ urlpatterns = [
     path('Administrator/Approve/',ApproveAdministrator.as_view()),
     path('UnApprovedAdministrator/',getALLUnApprovedAdministrator.as_view()),
     path("Login/",LoginView.as_view()),
+    path("Teacher/TeacherRegistration/",RegisterTeacher.as_view())
 ]

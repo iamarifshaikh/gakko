@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 import random
 import string
-from .utils import send_email
+from .utils import send_email , send_Teacher_email
 
 class Superadmin(Document):
     username = StringField(required=True)
@@ -80,17 +80,41 @@ class Administrator(Document):
         self.save()
 
 
-
 class Teacher(Document):
-    username = StringField(required=True, unique=True)
-    password = StringField(required=True)
-    email_address = StringField(required=True)
+    Name = StringField(required=True, null=True)
+    password = StringField(null=True)
+    email_address = StringField(required=True, unique=True)
+    unique_ID = StringField(unique=True)
     role = StringField(default='Teacher')
+    classNo = StringField(required=True)
+
+    def register(self):
+        # Generate and set the random password
+        password = self.generate_random_password()
+        self.set_password(password)
+        
+        # Generate and set the unique ID
+        self.unique_ID = self.generate_Teacher_id()
+
+        # Save the Teacher instance
+        self.save()
+
+        # Send the registration email
+        send_Teacher_email(self.Name, self.email_address, self.unique_ID, password)
+
+    def generate_random_password(self, length=8):
+        characters = string.ascii_letters + string.digits + string.punctuation
+        return ''.join(random.choice(characters) for i in range(length))
+
+    def generate_Teacher_id(self):
+        Name_part = self.Name[:3].upper()
+        classNo_part = self.classNo.upper()  # Using self.classNo
+        random_number = str(random.randint(1000, 9999))
+        return f"{Name_part}{classNo_part}{random_number}"
 
     def set_password(self, req_password):
         salt = bcrypt.gensalt()
         self.password = bcrypt.hashpw(req_password.encode('utf-8'), salt).decode('utf-8')
 
     def check_password(self, raw_password):
-        """Check if the provided password matches the stored hashed password."""
         return bcrypt.checkpw(raw_password.encode('utf-8'), self.password.encode('utf-8'))
