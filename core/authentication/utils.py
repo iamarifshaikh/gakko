@@ -9,7 +9,7 @@ def send_email(username , recipient_list , unique_ID,password):
     subject = "Congratulations! Your Registration is Successful"
 
     message = (
-        f"Dear {username},\n\n"
+        f"Dear {username}, `from school \n\n"
         f"Congratulations! Your registration as an Administrator has been successfully approved. "
         f"You can now access the various functionalities of our application.\n\n"
         f"Here is your unique Administrator ID: {unique_ID} and password: {password}\n\n"

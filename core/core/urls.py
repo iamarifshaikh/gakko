@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 from authentication.urls import *
+from School.urls import * #Api from school app
 
 urlpatterns = [
     path('',include('authentication.urls')),
+    path('School/',include('School.urls')),
     path('admin/', admin.site.urls),
 ]
