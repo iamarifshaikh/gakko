@@ -4,8 +4,10 @@ from rest_framework.views import APIView
 from .models import School
 from .serializer import SchoolSerializer
 from rest_framework import status
+from django.utils.decorators import method_decorator
+from .utils import *
 
-#------- School REgistration -----------------
+#------- School Registration -----------------
 class SchoolRegistration(APIView):
     def post(self, request):
         # Check if the school already exists
@@ -45,7 +47,8 @@ class DeleteSchool(APIView):
 # ------------------ school approve -------------------
 
 class ApproveSchool(APIView):
-    def post(self, request):
+    @method_decorator(admin_required)
+    def post(self, request):    
         try:
             # Try to retrieve the school by email
             school = School.objects.get(id=request.data.get('id'))
@@ -61,3 +64,19 @@ class ApproveSchool(APIView):
         except Exception as e:
             # Catch any other exceptions and return a generic error message
             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ------------------- School update -----------------------------
+class Updateschool(APIView):
+    def patch(self,request,id):
+        try:
+            school = School.objects.get(id=id)
+            serializer = SchoolSerializer(school, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_201_CREATED)

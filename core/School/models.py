@@ -10,7 +10,7 @@ from django.core.mail import settings
 class School(Document):
     school_id = StringField(null=True,required=False)
     school_name = StringField(required=True,null=False)
-    school_license = FileField(required=False)
+    school_license = FileField(upload_to="Media/",null=True,allow_blank=True)
     school_email = StringField(null=False,required=True)
     school_number = IntField(null=False,required=True)
     created_at = DateTimeField(default=datetime.utcnow())
