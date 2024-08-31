@@ -52,9 +52,7 @@ class AdminSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
     email = serializers.EmailField(required=True)
-    role = serializers.CharField()
-
-
+    role = serializers.CharField(required=False)
 
     def create(self,validated_data):
         password = validated_data.pop('password')
@@ -73,6 +71,55 @@ class AdminSerializer(serializers.Serializer):
 
         instance.save()
         return instance
+
+# class TeacherSerializer(serializers.Serializer):
+#     Name = serializers.CharField(required=True)
+#     email_address=serializers.EmailField(required=True)
+#     password = serializers.CharField(required=False,write_only=True)
+#     unique_ID=serializers.CharField()
+#     role = serializers.CharField()
+
+#     def create(self, validated_data):
+#         # Create a new Teacher instance
+#         teacher = Teacher(
+#             Name=validated_data['Name'],
+#             email_address=validated_data['email_address'],
+#             classNo=validated_data['classNo']
+#         )
+
+#         # Call the register method to handle password setting, unique ID generation, and email sending
+#         teacher.register()
+
+#         return teacher
+
+#     def update(self,instance,validated_data):
+#         password = validated_data.pop('password',None)
+
+#         if password:
+#             instance.set_password(password)
+#         instance.Name = validated_data.get('Name',instance.Name)
+#         instance.email = validated_data.get('email',instance.email)
+#         instance.role = validated_data.get('role',instance.role)
+#         instance.save()
+#         return instance
+
+class TeacherSerializer(serializers.Serializer):
+    Name = serializers.CharField(required=True)
+    email_address = serializers.EmailField(required=True)
+    classNo = serializers.CharField(required=True)
+
+    def create(self, validated_data):
+        # Create a new Teacher instance with the provided data
+        teacher = Teacher(
+            Name=validated_data['Name'],
+            email_address=validated_data['email_address'],
+            classNo=validated_data['classNo']
+        )
+
+        # Call the register method to handle password setting, unique ID generation, and email sending
+        teacher.register()
+
+        return teacher
 
 
 class LoginSerializer(serializers.Serializer):
@@ -130,12 +177,27 @@ class LoginSerializer(serializers.Serializer):
 
             return user
 
+        elif role == 'Teacher':
+            # Ensure 'unique_ID' and 'password' are provided for 'Teacher'
+            if not data.get('unique_ID'):
+                raise serializers.ValidationError({"unique_ID": "Unique ID is required for Teacher login."})
+            if not data.get('password'):
+                raise serializers.ValidationError({"password": "Password is required for Teacher login."})
+            
+            user = Teacher.objects.filter(unique_ID=data.get('unique_ID')).first()
+            if not user:
+                raise serializers.ValidationError({"non_field_errors": ["User not found"]})
+
+            if not user.check_password(data.get('password')):
+                raise serializers.ValidationError({"non_field_errors": ["Invalid credentials"]})
+
+            return user
+
+
         else:
             raise serializers.ValidationError({"non_field_errors": ["Invalid role or credentials."]})
 
         return data
-
-
 
 
 # class LoginSerializer(serializers.Serializer):

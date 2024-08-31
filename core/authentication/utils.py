@@ -21,3 +21,19 @@ def send_email(username , recipient_list , unique_ID,password):
     from_email=settings.EMAIL_HOST_USER
     recipient_list = [recipient_list]
     send_mail(subject,message,from_email,recipient_list)
+
+def send_Teacher_email(username , recipient_list , unique_ID,password):
+    print("In Teacher email send function")
+
+    subject = "Congratulations! Your Registration is Successful"
+
+    message = (
+        f"Dear {username},\n\n"
+        f"Congratulations! you have been registered as a Teacher "
+        f"You can now access the various functionalities of our application.\n\n"
+        f"Here is your unique Teacher ID: {unique_ID} and password: {password}\n\n"
+        f"Please keep this ID safe as it will be required for logging into the system.\n\n"
+    )
+    from_email=settings.EMAIL_HOST_USER
+    recipient_list = [recipient_list]
+    send_mail(subject,message,from_email,recipient_list)
