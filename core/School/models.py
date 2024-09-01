@@ -4,7 +4,7 @@ import bcrypt
 import random
 import string
 from datetime import datetime
-from authentication.utils import send_email
+# from authentication.utils import send_email
 from django.core.mail import settings
 
 class School(Document):

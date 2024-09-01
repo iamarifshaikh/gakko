@@ -18,9 +18,13 @@ from django.contrib import admin
 from django.urls import path,include
 from authentication.urls import *
 from School.urls import * #Api from school app
+from .views import welcome_view
 
 urlpatterns = [
     path('',include('authentication.urls')),
-    path('School/',include('School.urls')),
+    path('', welcome_view),
+    path('school/',include('School.urls')),
+    path('teacher/',include('Teacher.urls')),
+    path('teacher-role/',include('TeacherRoles.urls')),
     path('admin/', admin.site.urls),
 ]
