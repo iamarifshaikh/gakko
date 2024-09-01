@@ -4,7 +4,7 @@ import bcrypt
 import random
 import string
 from datetime import datetime
-# from authentication.utils import send_email
+from . import utils
 from django.core.mail import settings
 
 class School(Document):
@@ -28,7 +28,7 @@ class School(Document):
 
         self.save()
 
-        send_email(self.school_name,self.school_email,self.school_id,password)
+        utils.send_email(self.school_name,self.school_email,self.school_id,password)
 
     def set_password(self, req_password):
         salt = bcrypt.gensalt()
