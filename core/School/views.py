@@ -5,7 +5,7 @@ from .models import School
 from .serializer import SchoolSerializer
 from rest_framework import status
 from django.utils.decorators import method_decorator
-from .utils import *
+from .utils.adminCheck import *
 
 #------- School Registration -----------------
 class SchoolRegistration(APIView):
@@ -32,12 +32,10 @@ class SchoolRegistration(APIView):
 # --------------- Delete School ------------------------
 
 class DeleteSchool(APIView):
-    def delete(self, request):
-        school_id = request.data.get('school_id')
-        if not school_id:
-            return Response({'message': 'School ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request,id):
+        
         try:
-            school = School.objects.get(school_id=school_id)
+            school = School.objects.get(id=id)
             school.delete()
             return Response({'message': 'School deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
@@ -50,7 +48,7 @@ class ApproveSchool(APIView):
     @method_decorator(admin_required)
     def post(self, request):    
         try:
-            # Try to retrieve the school by email
+            # Try to retrieve the school by id
             school = School.objects.get(id=request.data.get('id'))
             
             # Check if the school is already verified
@@ -80,3 +78,37 @@ class Updateschool(APIView):
 
         except Exception as e:
             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_201_CREATED)
+
+
+# ----------------- Read all School ---------------------------------
+
+class ReadVerifiedSchool(APIView):
+    def get(self,request):
+        try:
+
+            school = School.objects.filter(verified=True)
+
+            serializer = SchoolSerializer(school,many=True)
+
+            return Response(serializer.data,status=status.HTTP_200_OK)
+            
+            # return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# ------------------ Read unverified School ------------------------------------
+
+class ReadUnverifiedSchool(APIView):
+    def get(self,request):
+        try:
+            school = School.objects.filter(verified=False)
+
+            serializer = SchoolSerializer(school,many=True)
+        
+            return Response(serializer.data,status=status.HTTP_200_OK)
+    
+        except Exception as e:
+            return Response({'error': 'An error occurred.', 'details': str(e)},status=status.HTTP)
