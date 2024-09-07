@@ -7,6 +7,9 @@ from Class.models import ClassDivision,ClassStandard
 from rest_framework import status
 from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
+from django.utils.decorators import method_decorator
+from .utils.adminCheck import *
+from django.db import transaction
 
 # -------------- School Registration -----------------
 class SchoolRegistration(APIView):
@@ -44,7 +47,7 @@ class LoginSchool(APIView):
             
             try:
                 # Assuming the school ID is stored in the user profile
-                school = School.objects.get(school_id=user.profile.school_id)  # Adjust according to your user model
+                school = School.objects.get(school_id=user.profile.school_id)  # Adjust according to your user model 
                 
                 if not school.classes_defined:
                     # Redirect to DefineClasses if classes are not defined
