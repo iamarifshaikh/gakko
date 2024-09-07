@@ -7,6 +7,10 @@ from rest_framework import status
 from django.utils.decorators import method_decorator
 from .utils.adminCheck import *
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 #------- School Registration -----------------
 class SchoolRegistration(APIView):
     def post(self, request):
@@ -33,6 +37,8 @@ class SchoolRegistration(APIView):
 
 class DeleteSchool(APIView):
     def delete(self, request,id):
+
+        logger.info(f"Received delete request for School ID: {id}")
         
         try:
             school = School.objects.get(id=id)
@@ -62,7 +68,6 @@ class ApproveSchool(APIView):
         except Exception as e:
             # Catch any other exceptions and return a generic error message
             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 # ------------------- School update -----------------------------
 class Updateschool(APIView):

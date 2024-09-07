@@ -27,7 +27,7 @@ class SchoolSerializer(serializers.Serializer):
             instance.school_id = validated_data.pop('school_id')
         
         instance.school_name = validated_data.get('school_name', instance.school_name)
-        instance.school_email = validated_data.get('school_name',instance.school_email)
+        instance.school_email = validated_data.get('school_email',instance.school_email)
         instance.school_number = validated_data.get('school_number',instance.school_number)
         instance.created_at = validated_data.get('created_at',instance.created_at)
         instance.approved_at = validated_data.get('approved_at',instance.approved_at)

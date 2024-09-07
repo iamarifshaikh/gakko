@@ -6,7 +6,7 @@ env = environ.Env()
 def admin_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        admin_email = request.headers.get('adminmEmail')
+        admin_email = request.headers.get('adminEmail')
         admin_password = request.headers.get('adminPassword')
 
         expected_admin_email = env('admin_email')
