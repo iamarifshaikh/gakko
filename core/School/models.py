@@ -19,7 +19,8 @@ class School(Document):
     principal_name = StringField(required=True)
     password = StringField(null=True)
     verified = BooleanField(default=False)
-
+    classes_defined = BooleanField(default=False)  # New field to track if classes are defined made by @Arif 
+    
     def approve(self):
         self.verified = True
         self.approved_at = datetime.utcnow()
