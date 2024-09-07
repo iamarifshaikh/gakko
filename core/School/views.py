@@ -66,9 +66,6 @@ class LoginSchool(APIView):
 # --------------- Delete School ------------------------
 class DeleteSchool(APIView):
     def delete(self, request,id):
-
-        logger.info(f"Received delete request for School ID: {id}")
-        
         try:
             school = School.objects.get(id=id)
             school.delete()
