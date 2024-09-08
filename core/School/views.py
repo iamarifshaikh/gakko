@@ -2,14 +2,15 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import School
-from .serializer import SchoolSerializer
+from .serializer import SchoolSerializer , LoginSerializer
 from Class.models import ClassDivision,ClassStandard
 from rest_framework import status
 from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
 from django.utils.decorators import method_decorator
-from .utils.adminCheck import *
+from .utils.authCheck import *
 from django.db import transaction
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # -------------- School Registration -----------------
 class SchoolRegistration(APIView):
@@ -35,34 +36,28 @@ class SchoolRegistration(APIView):
 # -------------- Login School  -------------------
 class LoginSchool(APIView):
     def post(self, request):
-        # Extract username and password from the request
-        school_id = request.data.get('school_id')
-        password = request.data.get('password')
 
-        # Perform authentication
-        user = authenticate(request, school_id=school_id, password=password)
-        if user is not None:
-            # Log the user in
-            login(request, user)
+
+        serializer = LoginSerializer(data = request.data)
+
+        if serializer.is_valid():
+            user = serializer.validated_data
+            print(f"School Name : ${user.school_name} ")
+
+            refresh = RefreshToken.for_user(user)
+
+            response = Response({
+                'message': f"School logged in successfully",
+                'token': str(refresh.access_token),
+                'refresh_token':str(refresh),
+                }, status=status.HTTP_200_OK)
             
-            try:
-                # Assuming the school ID is stored in the user profile
-                school = School.objects.get(school_id=user.profile.school_id)  # Adjust according to your user model 
-                
-                if not school.classes_defined:
-                    # Redirect to DefineClasses if classes are not defined
-                    return redirect('define-classes')  # Adjust according to your URL patterns
+            response.headers['Authorization'] = str(refresh.access_token)
 
-                # Continue with the usual login flow
-                # For example, redirect to a dashboard or homepage
-                return redirect('home')  # Adjust according to your URL patterns
-
-            except School.DoesNotExist:
-                return Response({'error': 'School not found.'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            # Return an error response if authentication fails
-            return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
         
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
 # --------------- Delete School ------------------------
 class DeleteSchool(APIView):
     def delete(self, request,id):
@@ -76,7 +71,7 @@ class DeleteSchool(APIView):
 
 # ------------------ school approve -------------------
 class ApproveSchool(APIView):
-    @method_decorator(admin_required)
+    @method_decorator(is_admin)
     def post(self, request):    
         try:
             # Try to retrieve the school by id
@@ -128,7 +123,7 @@ class Updateschool(APIView):
             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_201_CREATED)
 
 
-# ----------------- Read all School ---------------------------------
+# ----------------- Read verified School ---------------------------------
 
 class ReadVerifiedSchool(APIView):
     def get(self,request):
