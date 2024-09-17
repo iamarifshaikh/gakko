@@ -51,4 +51,4 @@ class ClassSerializer(serializers.Serializer):
 class SchoolSerializer(serializers.Serializer):
     class Meta:
         model = School
-        fields = ['school_id', 'school_name', 'classes_defined']  # Add other fields as needed
+        fields = ['school_id', 'school_name', 'classes_defined']
