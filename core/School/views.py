@@ -13,6 +13,7 @@ from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # -------------- School Registration -----------------
+
 class SchoolRegistration(APIView):
     def post(self, request):
         # Check if the school already exists
@@ -34,6 +35,7 @@ class SchoolRegistration(APIView):
         return Response({'error': 'Registration failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 # -------------- Login School  -------------------
+
 class LoginSchool(APIView):
     def post(self, request):
 

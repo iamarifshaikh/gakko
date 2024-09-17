@@ -9,5 +9,3 @@ class Teacher(TimestampedDocument):
     teacher_email = StringField(null=False,required=True)
     teacher_number = IntField(null=False,required=True)
     school_id = fields.ReferenceField(School, reverse_delete_rule=CASCADE)
-
-   
