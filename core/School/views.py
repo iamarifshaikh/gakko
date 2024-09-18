@@ -9,6 +9,8 @@ from django.contrib.auth import authenticate, login
 from django.utils.decorators import method_decorator
 from .utils.authCheck import *
 from django.db import transaction
+from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # -------------- School Registration ----------------- 
 
@@ -130,6 +132,9 @@ class ApproveSchool(APIView):
                 ClassDivision.D, ClassDivision.E
             ]
 
+
+            school.classes_defined = True
+
             for standard in standards:
                 for division in divisions:
                     Class.objects.create(
@@ -162,7 +167,6 @@ class Updateschool(APIView):
 
         except Exception as e:
             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_201_CREATED)
-
 
 # ----------------- Read verified School ---------------------------------
 

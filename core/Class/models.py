@@ -118,7 +118,7 @@ class Class(Document):
     meta = {
         'indexes': [
             {
-                'fields': ('class_std', 'class_division'),
+                'fields': ('class_std', 'class_division','school_id'),
                 'unique': True
             }
         ]
