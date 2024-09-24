@@ -1,14 +1,19 @@
-# from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import School
-from .serializer import SchoolSerializer
-from Class.models import ClassDivision,ClassStandard
+from .serializer import SchoolSerializer , LoginSerializer
+from Class.models import ClassDivision,ClassStandard,Class
 from rest_framework import status
 from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
+from django.utils.decorators import method_decorator
+from .utils.authCheck import *
+from django.db import transaction
+from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
-# -------------- School REgistration -----------------
+# -------------- School Registration ----------------- 
+
 class SchoolRegistration(APIView):
     def post(self, request):
         # Check if the school already exists
@@ -30,44 +35,36 @@ class SchoolRegistration(APIView):
         return Response({'error': 'Registration failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 # -------------- Login School  -------------------
+
 class LoginSchool(APIView):
     def post(self, request):
-        # Extract username and password from the request
-        school_id = request.data.get('school_id')
-        password = request.data.get('password')
 
-        # Perform authentication
-        user = authenticate(request, school_id=school_id, password=password)
-        if user is not None:
-            # Log the user in
-            login(request, user)
+
+        serializer = LoginSerializer(data = request.data)
+
+        if serializer.is_valid():
+            user = serializer.validated_data
+            print(f"School Name : ${user.school_name} ")
+
+            refresh = RefreshToken.for_user(user)
+
+            response = Response({
+                'message': f"School logged in successfully",
+                'token': str(refresh.access_token),
+                'refresh_token':str(refresh),
+                }, status=status.HTTP_200_OK)
             
-            try:
-                # Assuming the school ID is stored in the user profile
-                school = School.objects.get(school_id=user.profile.school_id)  # Adjust according to your user model
-                
-                if not school.classes_defined:
-                    # Redirect to DefineClasses if classes are not defined
-                    return redirect('define-classes')  # Adjust according to your URL patterns
+            response.headers['Authorization'] = str(refresh.access_token)
 
-                # Continue with the usual login flow
-                # For example, redirect to a dashboard or homepage
-                return redirect('home')  # Adjust according to your URL patterns
-
-            except School.DoesNotExist:
-                return Response({'error': 'School not found.'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            # Return an error response if authentication fails
-            return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
         
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
 # --------------- Delete School ------------------------
 class DeleteSchool(APIView):
-    def delete(self, request):
-        school_id = request.data.get('school_id')
-        if not school_id:
-            return Response({'message': 'School ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request,id):
         try:
-            school = School.objects.get(school_id=school_id)
+            school = School.objects.get(id=id)
             school.delete()
             return Response({'message': 'School deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
@@ -75,38 +72,131 @@ class DeleteSchool(APIView):
             return Response({'message': 'School not found'}, status=status.HTTP_404_NOT_FOUND)
 
 # ------------------ school approve -------------------
+
+# class ApproveSchool(APIView):
+#     @method_decorator(is_admin)
+#     def post(self, request):    
+#         try:
+#             # Try to retrieve the school by id
+#             school = School.objects.get(id=request.data.get('id'))
+            
+#             # Check if the school is already verified
+#             if not school.verified:
+#                  with transaction.atomic():
+#                     school.approve()  # Approve the school
+
+#                     # Create default classes
+#                     standards = [std for std in ClassStandard]
+#                     divisions = [div for div in ClassDivision]
+#                     for standard in standards:
+#                         for division in divisions:
+#                             Class.objects.create(
+#                                 class_std=standard,
+#                                 class_division=division,
+#                                 school=school
+#                             )
+                
+#             return Response({'message': 'School approved and classes created successfully.'}, status=status.HTTP_200_OK)
+            
+#             return Response({'message': 'School is already approved.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         except School.DoesNotExist:
+#             return Response({'error': 'School not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+#             # If the school is already verified
+#             return Response({'message': 'School is already approved.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         except Exception as e:
+#             # Catch any other exceptions and return a generic error message
+#             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class ApproveSchool(APIView):
+    @method_decorator(is_admin)
     def post(self, request):
         try:
-            # Try to retrieve the school by email
             school = School.objects.get(id=request.data.get('id'))
             
-            # Check if the school is already verified
-            if not school.verified:
-                 with transaction.atomic():
-                    school.approve()  # Approve the school
-
-                    # Create default classes
-                    standards = [std for std in ClassStandard]
-                    divisions = [div for div in ClassDivision]
-                    for standard in standards:
-                        for division in divisions:
-                            Class.objects.create(
-                                class_std=standard,
-                                class_division=division,
-                                school=school
-                            )
-                
-            return Response({'message': 'School approved and classes created successfully.'}, status=status.HTTP_200_OK)
+            if school.verified:
+                return Response({'message': 'School is already approved.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            return Response({'message': 'School is already approved.'}, status=status.HTTP_400_BAD_REQUEST)
+            school.approve()
+
+            standards = [
+                ClassStandard.NURSERY, ClassStandard.JR_KG, ClassStandard.SR_KG,
+                ClassStandard.FIRST, ClassStandard.SECOND, ClassStandard.THIRD,
+                ClassStandard.FOURTH, ClassStandard.FIFTH, ClassStandard.SIXTH,
+                ClassStandard.SEVENTH, ClassStandard.EIGHTH, ClassStandard.NINTH, ClassStandard.TENTH
+            ]
+            divisions = [
+                ClassDivision.A, ClassDivision.B, ClassDivision.C,
+                ClassDivision.D, ClassDivision.E
+            ]
+
+
+            school.classes_defined = True
+
+            for standard in standards:
+                for division in divisions:
+                    Class.objects.create(
+                        class_std=standard,
+                        class_division=division,
+                        school_id=school.id 
+                    )
+            
+            return Response({'message': 'School approved and classes created successfully.'}, status=status.HTTP_200_OK)
         
         except School.DoesNotExist:
             return Response({'error': 'School not found'}, status=status.HTTP_404_NOT_FOUND)
-            
-            # If the school is already verified
-            return Response({'message': 'School is already approved.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         except Exception as e:
             # Catch any other exceptions and return a generic error message
             return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ------------------- School update -----------------------------
+class Updateschool(APIView):
+    def patch(self,request,id):
+        try:
+            school = School.objects.get(id=id)
+            serializer = SchoolSerializer(school, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_201_CREATED)
+
+# ----------------- Read verified School ---------------------------------
+
+class ReadVerifiedSchool(APIView):
+    def get(self,request):
+        try:
+
+            school = School.objects.filter(verified=True)
+
+            serializer = SchoolSerializer(school,many=True)
+
+            return Response(serializer.data,status=status.HTTP_200_OK)
+            
+            # return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({'error': 'An error occurred.', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# ------------------ Read unverified School ------------------------------------
+
+class ReadUnverifiedSchool(APIView):
+    def get(self,request):
+        try:
+            school = School.objects.filter(verified=False)
+
+            serializer = SchoolSerializer(school,many=True)
+        
+            return Response(serializer.data,status=status.HTTP_200_OK)
+    
+        except Exception as e:
+            return Response({'error': 'An error occurred.', 'details': str(e)},status=status.HTTP)

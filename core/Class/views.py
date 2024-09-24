@@ -1,14 +1,19 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Class,School 
+from .models import Class 
+from School.models import *
 from .serializer import ClassSerializer
+from School.utils.authCheck import *
+from django.utils.decorators import method_decorator
 
 class DefineClasses(APIView):
+    @method_decorator(is_school_logged_in)
     def post(self, request):
-        school_id = request.user.school_id  # Assuming you have the school ID from the logged-in user
+        school_id = request.school.school_id
         try:
             school = School.objects.get(school_id=school_id)
+            print(school)
             if school.classes_defined:
                 return Response({'message': 'Classes are already defined.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -27,14 +32,14 @@ class DefineClasses(APIView):
                 class_obj = Class(
                     class_std=standard,
                     class_division='A',
-                    school=school
+                    school_id=school
                 )
                 class_obj.save()
 
             school.classes_defined = True
             school.save()
 
-            return Response({'message': 'Classes defined successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Classes defined successfully Humaira.'}, status=status.HTTP_200_OK)
 
         except School.DoesNotExist:
             return Response({'error': 'School not found.'}, status=status.HTTP_404_NOT_FOUND)
