@@ -1,6 +1,7 @@
-from mongoengine import fields
+from mongoengine import fields, Document
 from django.db import models
 from School.models import School
+from Teacher.models import Teacher
 from mongoengine import CASCADE
 
 # Create your models here.
@@ -26,12 +27,11 @@ class ClassDivision(models.TextChoices):
     D = 'D', 'D'
     E = 'E', 'E'
 
-class Class(models.Model):
+class Class(Document):
     class_id = models.AutoField(primary_key=True)
     class_std = models.CharField(max_length=10, choices=ClassStandard.choices)
     class_division = models.CharField(max_length=1, choices=ClassDivision.choices)
-    # To do by @Alfiya
-    # class_teacher_id = fields.ReferenceField(Teacher,reverse_delete_rule=CASCADE) 
+    class_teacher_id = fields.ReferenceField(Teacher,reverse_delete_rule=CASCADE) 
     school_id = fields.ReferenceField(School, reverse_delete_rule=CASCADE)
 
     updated_at = models.DateTimeField(auto_now=True)
