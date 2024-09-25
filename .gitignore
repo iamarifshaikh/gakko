@@ -1,4 +1,5 @@
 environment/
 __pycache__/
+.env
 *.env
 gakkoenv
