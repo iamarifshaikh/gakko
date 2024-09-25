@@ -27,7 +27,7 @@ class SchoolSerializer(serializers.Serializer):
             instance.school_id = validated_data.pop('school_id')
         
         instance.school_name = validated_data.get('school_name', instance.school_name)
-        instance.school_email = validated_data.get('school_name',instance.school_email)
+        instance.school_email = validated_data.get('school_email',instance.school_email)
         instance.school_number = validated_data.get('school_number',instance.school_number)
         instance.created_at = validated_data.get('created_at',instance.created_at)
         instance.approved_at = validated_data.get('approved_at',instance.approved_at)
@@ -37,3 +37,25 @@ class SchoolSerializer(serializers.Serializer):
 
         instance.save()
         return instance
+
+class LoginSerializer(serializers.Serializer):
+    school_id = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+    def validate(self,data):
+        if not data.get('school_id'):
+            raise serializers.ValidationError('School id is required')
+        if not data.get('password'):
+            raise serializers.ValidationError('Password is required')
+
+        user = School.objects.filter(school_id = data.get('school_id')).first()
+        if not user:
+            raise serializers.ValidationError('School not found')
+        if not user.verified:
+            raise serializers.ValidationError('School is not verified yet')
+
+        if not user.check_password(data.get('password')):
+            raise serializers.ValidationError('Invalid password')
+        
+        return user
+        

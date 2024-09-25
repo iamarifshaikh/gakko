@@ -45,7 +45,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'authentication',
+    'Teacher',
+    'TeacherRoles',
+    'School',
+    'Class'
 ]
 
 MIDDLEWARE = [
@@ -56,8 +59,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'authentication.authentication.JWTMiddlewareAuth'
-    # 'authentication.authentication.IsLoggedIn'
 ]
 
 ROOT_URLCONF = 'core.urls'
