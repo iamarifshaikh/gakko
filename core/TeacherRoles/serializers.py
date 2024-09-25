@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import *
-from datetime import datetime
-from django.utils import timezone
+from datetime import datetime, timezone
+from bson import ObjectId
 
 class TeacherRoleSerializer(serializers.Serializer):
     role_id = serializers.CharField(read_only=True)
@@ -19,7 +19,11 @@ class TeacherRoleSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         instance.role_type = validated_data.get('role_type', instance.role_type)
         instance.subject_name = validated_data.get('subject_name', instance.subject_name)
-        instance.class_id = validated_data.get('class_id', instance.class_id)
-        instance.updated_at = datetime.now(timezone.now)
+        if validated_data.get("class_id") == '':
+            class_id = None
+        else:
+            class_id = ObjectId(validated_data.get("class_id"))
+        instance.class_id =class_id
+        instance.updated_at = datetime.now(timezone.utc)
         instance.save()
         return instance

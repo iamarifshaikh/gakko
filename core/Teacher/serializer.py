@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from datetime import datetime
-from django.utils import timezone 
+from datetime import datetime, timezone
 
 class TeacherSerializer(serializers.Serializer):
     teacher_id = serializers.CharField(read_only=True)
@@ -13,13 +12,13 @@ class TeacherSerializer(serializers.Serializer):
     school_id = serializers.CharField(required=True)
 
     def create(self,validated_data):
-        return School.objects.create(**validated_data)
+        return Teacher(**validated_data).save()
 
     def update(self, instance, validated_data):
         instance.teacher_name = validated_data.get('teacher_name', instance.teacher_name)
         instance.teacher_email = validated_data.get('teacher_email', instance.teacher_email)
         instance.teacher_number = validated_data.get('teacher_number', instance.teacher_number)
-        instance.updated_at = datetime.now(timezone.now)
+        instance.updated_at = datetime.now(timezone.utc)
         instance.save()
         return instance
 
