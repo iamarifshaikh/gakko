@@ -4,13 +4,14 @@ import bcrypt
 import random
 import string
 from datetime import datetime
-from authentication.utils import send_email
+from .utils.sendEmail import *
 from django.core.mail import settings
+
 
 class School(Document):
     school_id = StringField(null=True,required=False)
     school_name = StringField(required=True,null=False)
-    school_license = FileField(required=False)
+    school_license = FileField(upload_to="Media/",null=True,allow_blank=True)
     school_email = StringField(null=False,required=True)
     school_number = IntField(null=False,required=True)
     created_at = DateTimeField(default=datetime.utcnow())
@@ -18,7 +19,8 @@ class School(Document):
     principal_name = StringField(required=True)
     password = StringField(null=True)
     verified = BooleanField(default=False)
-
+    classes_defined = BooleanField(default=False)  # New field to track if classes are defined made by @Arif 
+    
     def approve(self):
         self.verified = True
         self.approved_at = datetime.utcnow()
